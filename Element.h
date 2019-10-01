@@ -16,8 +16,8 @@
 class Element
 {
    public:
-      Element(const std::size_t id)
-         :_index(id), _nodes(new Node*[3])
+      Element(const std::size_t id, const int nnodes_)
+         :_index(id), nnodes(nnodes_), _nodes(new Node*[4])
       {
       }
 
@@ -42,8 +42,10 @@ class Element
          return _nodes;
       }
 
+      int getNodeNumber() const {return nnodes;}
    protected:
       std::size_t _index;       ///< Index
+      const int nnodes;
 
       /// Nodes of the element
       Node** _nodes;

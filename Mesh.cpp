@@ -95,13 +95,14 @@ bool Mesh::read(const std::string& in_file_name)
 
       ins >> index >> et;
 
-      if(et != 2)
+      if(et != 2 && et != 3)
       {
-         cout << "Only triangle element is allowed. " << std::endl;
+         cout << "Only triangle or quadrilateral element is allowed. " << std::endl;
          return false;
       }
 
-      Element *elem = new Element(i);
+      const int nnodes = (et == 2) ? 3 : 4;
+      Element *elem = new Element(i, nnodes);
       _elems[i] = elem;
 
       ins >> ntags >> mat_id >> geo_id;
@@ -115,7 +116,7 @@ bool Mesh::read(const std::string& in_file_name)
          ipart = 0;
 
       //
-      for (int j=0; j<3; j++)
+      for (int j=0; j<nnodes; j++)
       {
          size_t node_id;
          ins >> node_id;
@@ -144,7 +145,7 @@ bool Mesh::read(const std::string& in_file_name)
       Element *elem = _elems[i];
       Node **e_nodes = elem->getNodes();
 
-      for (int k=0; k<3; k++)
+      for (int k=0; k<elem->getNodeNumber(); k++)
       {
          e_nodes[k]->setMark(true);
       }
@@ -184,14 +185,35 @@ bool Mesh::write(const std::string& out_file_name) const
       return false;
    }
 
+   int counter = 0;
    for (auto elem : _elems)
    {
       Node **e_nodes = elem->getNodes();
 
-      os << elem->getID();
+      os << counter++;
+      
+      const int nnodes = elem->getNodeNumber();
       for (int k=0; k<3; k++)
       {
          double* x = e_nodes[k]->getCoordinates();
+         os << " " << x[0]
+            << " " << x[1]
+            << " " << x[2];
+      }
+      os << "\n";
+
+      if (nnodes == 4)
+      {
+         os << counter++;
+         double* x = e_nodes[2]->getCoordinates();
+         os << " " << x[0]
+            << " " << x[1]
+            << " " << x[2];
+         x = e_nodes[3]->getCoordinates();
+         os << " " << x[0]
+            << " " << x[1]
+            << " " << x[2];
+         x = e_nodes[0]->getCoordinates();
          os << " " << x[0]
             << " " << x[1]
             << " " << x[2];
@@ -234,13 +256,14 @@ bool Mesh::writeGmsh(const std::string &out_file_name) const
    {
       const char deli = ' ';
 
+      const int ele_type = (elem->getNodeNumber()==3) ? 2 : 3;
       os<<elem->getID() + 1 << deli
-        <<" 2 " << deli << "3" << deli
+        <<ele_type << deli << "3" << deli
         <<" 1 " << deli << " 1 " << deli
         << "1 " << deli;
 
       Node** e_nodes = elem->getNodes();
-      for (int i=0; i<3; i++)
+      for (int i=0; i<elem->getNodeNumber(); i++)
       {
          os << e_nodes[i]->getID() + 1 << deli;
       }
